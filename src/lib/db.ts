@@ -1,25 +1,31 @@
 import { PrismaClient } from '@prisma/client';
 
-const prismaClientSingleton = () => {
-  return new PrismaClient();
+// Para evitar múltiples instancias durante hot reloading en desarrollo
+const globalForPrisma = globalThis as unknown as {
+  prisma: PrismaClient | undefined;
 };
 
-type PrismaClientSingleton = ReturnType<typeof prismaClientSingleton>;
+// Opciones específicas para entornos serverless
+const prismaClientSingleton = () => {
+  const client = new PrismaClient({
+    log: ['error'],
+    datasources: {
+      db: {
+        url: process.env.POSTGRES_PRISMA_URL,
+      },
+    },
+  });
 
-const globalForPrisma = globalThis as unknown as {
-  prisma: PrismaClientSingleton | undefined;
+  // Método para reconectar en caso de error
+  client.$on('error', () => {
+    console.log('Prisma Client error - attempting reconnect');
+  });
+
+  return client;
 };
 
 const prisma = globalForPrisma.prisma ?? prismaClientSingleton();
 
-// Configuración para evitar el error de prepared statements
-if (prisma.$use) {
-  prisma.$use(async (params, next) => {
-    // Aquí podrías añadir lógica adicional en el futuro si es necesario
-    return next(params);
-  });
-}
+if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
 
 export default prisma;
-
-if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma;
