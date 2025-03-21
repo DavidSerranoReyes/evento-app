@@ -17,8 +17,9 @@ const prismaClientSingleton = () => {
   });
 
   // Método para reconectar en caso de error
-  client.$on('error', () => {
-    console.log('Prisma Client error - attempting reconnect');
+  client.$on('error', (e: Error) => {
+    // Aquí especificamos el tipo `Error`
+    console.error('Prisma Client error - attempting reconnect:', e);
   });
 
   return client;
