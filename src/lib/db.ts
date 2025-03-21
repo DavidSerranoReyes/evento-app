@@ -1,12 +1,7 @@
 import { PrismaClient } from '@prisma/client';
 
 const prismaClientSingleton = () => {
-  return new PrismaClient({
-    // Añadir esta configuración para evitar el error de prepared statements
-    query: {
-      parameterized: false,
-    },
-  });
+  return new PrismaClient();
 };
 
 type PrismaClientSingleton = ReturnType<typeof prismaClientSingleton>;
@@ -16,6 +11,14 @@ const globalForPrisma = globalThis as unknown as {
 };
 
 const prisma = globalForPrisma.prisma ?? prismaClientSingleton();
+
+// Configuración para evitar el error de prepared statements
+if (prisma.$use) {
+  prisma.$use(async (params, next) => {
+    // Aquí podrías añadir lógica adicional en el futuro si es necesario
+    return next(params);
+  });
+}
 
 export default prisma;
 
