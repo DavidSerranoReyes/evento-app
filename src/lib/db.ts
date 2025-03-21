@@ -5,10 +5,10 @@ const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
 
-// Opciones específicas para entornos serverless
+// Configurar Prisma Client con eventos de log
 const prismaClientSingleton = () => {
   const client = new PrismaClient({
-    log: ['error'],
+    log: ['query', 'info', 'warn', 'error'], // Logs de diferentes niveles
     datasources: {
       db: {
         url: process.env.POSTGRES_PRISMA_URL,
@@ -16,12 +16,7 @@ const prismaClientSingleton = () => {
     },
   });
 
-  // Método para reconectar en caso de error
-  client.$on('error', (e: any) => {
-    // Usamos 'any' para permitir que acepte cualquier tipo de error
-    console.error('Prisma Client error - attempting reconnect:', e);
-  });
-
+  // Deja que Prisma maneje los logs automáticamente
   return client;
 };
 
